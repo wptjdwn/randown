@@ -29,15 +29,49 @@ with st.form("add_user_form"):
             st.session_state.users = pd.concat([st.session_state.users, new_user], ignore_index=True)
             st.success(f"사용자 '{name}'이(가) 추가되었습니다.")
 
-# 사용자 데이터 테이블 출력 및 편집 기능
+# 사용자 데이터 테이블 출력 및 수정/삭제 기능
 st.header("사용자 리스트")
 
-# 데이터프레임을 편집할 수 있는 에디터
-edited_users = st.data_editor(st.session_state.users, key="user_editor")
-# 데이터프레임을 업데이트하는 버튼
-if st.button("저장"):
-    st.session_state.users = edited_users
-    st.success("변경사항이 저장되었습니다.")
+# 선택된 인덱스와 수정 폼을 관리하는 상태 변수
+if "edit_index" not in st.session_state:
+    st.session_state.edit_index = None
+
+# 각 사용자 옆에 수정 및 삭제 버튼 추가
+def update_user(index, name, probability):
+    st.session_state.users.loc[index] = [name, probability]
+    st.session_state.edit_index = None
+    st.success("사용자가 수정되었습니다.")
+
+def delete_user(index):
+    st.session_state.users = st.session_state.users.drop(index).reset_index(drop=True)
+    st.session_state.edit_index = None
+    st.success("사용자가 삭제되었습니다.")
+
+# 사용자 리스트를 표시하는 데이터프레임
+if not st.session_state.users.empty:
+    for index, row in st.session_state.users.iterrows():
+        col1, col2, col3 = st.columns([3, 2, 1])
+        with col1:
+            st.write(f"**{row['Name']}**: 확률 {row['Probability']}")
+        with col2:
+            if st.button("수정", key=f"edit_{index}"):
+                st.session_state.edit_index = index
+        with col3:
+            if st.button("삭제", key=f"delete_{index}"):
+                delete_user(index)
+
+# 수정 폼
+if st.session_state.edit_index is not None:
+    index = st.session_state.edit_index
+    user_to_edit = st.session_state.users.loc[index]
+    st.header("사용자 수정")
+    with st.form("edit_user_form"):
+        new_name = st.text_input("이름", user_to_edit["Name"])
+        new_probability = st.number_input("확률 (0 - 100)", min_value=0.0, max_value=100.0, value=user_to_edit["Probability"], step=1.0)
+        submit_edit = st.form_submit_button("수정 완료")
+        
+        if submit_edit:
+            update_user(index, new_name, new_probability)
 
 # 랜덤 뽑기 기능
 st.header("랜덤 뽑기")
@@ -58,4 +92,3 @@ st.header("리스트 초기화")
 if st.button("리스트 초기화"):
     st.session_state.users = pd.DataFrame(columns=["Name", "Probability"])
     st.success("모든 사용자가 초기화되었습니다.")
-
