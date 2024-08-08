@@ -29,9 +29,15 @@ with st.form("add_user_form"):
             st.session_state.users = pd.concat([st.session_state.users, new_user], ignore_index=True)
             st.success(f"사용자 '{name}'이(가) 추가되었습니다.")
 
-# 사용자 데이터 테이블 출력
+# 사용자 데이터 테이블 출력 및 편집 기능
 st.header("사용자 리스트")
-st.dataframe(st.session_state.users)
+
+# 데이터프레임을 편집할 수 있는 에디터
+edited_users = st.data_editor(st.session_state.users, key="user_editor")
+# 데이터프레임을 업데이트하는 버튼
+if st.button("저장"):
+    st.session_state.users = edited_users
+    st.success("변경사항이 저장되었습니다.")
 
 # 랜덤 뽑기 기능
 st.header("랜덤 뽑기")
@@ -52,3 +58,4 @@ st.header("리스트 초기화")
 if st.button("리스트 초기화"):
     st.session_state.users = pd.DataFrame(columns=["Name", "Probability"])
     st.success("모든 사용자가 초기화되었습니다.")
+
